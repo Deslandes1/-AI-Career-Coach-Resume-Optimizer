@@ -278,21 +278,27 @@ Keep each section concise but actionable. Use bullet points."""
                     # Display results in nice cards
                     st.markdown(f"## {result_title}")
                     
-                    # Split sections by markdown headers
+                    # Split sections by double newlines and process each
                     sections = result.split("\n\n")
                     for section in sections:
-                        if section.strip():
-                            if "📌 KEYWORDS" in section or "📌 Mots‑clés" in section:
-                                st.markdown(f'<div class="card"><h3>{keywords_section}</h3>{section.replace("📌 KEYWORDS TO ADD:", "").replace("📌 Mots‑clés à ajouter:", "")}</div>', unsafe_allow_html=True)
-                            elif "🛠️ MISSING SKILLS" in section or "🛠️ Compétences manquantes" in section:
-                                st.markdown(f'<div class="card"><h3>{skills_section}</h3>{section.replace("🛠️ MISSING SKILLS / IMPROVEMENTS:", "").replace("🛠️ Compétences manquantes / Améliorations:", "")}</div>', unsafe_allow_html=True)
-                            elif "📄 FORMATTING" in section or "📄 Suggestions de mise en forme" in section:
-                                st.markdown(f'<div class="card"><h3>{format_section}</h3>{section.replace("📄 FORMATTING SUGGESTIONS:", "").replace("📄 Suggestions de mise en forme:", "")}</div>', unsafe_allow_html=True)
-                            elif "❓ PREDICTED INTERVIEW" in section or "❓ Questions d'entretien prédites" in section:
-                                st.markdown(f'<div class="card"><h3>{questions_section}</h3>{section.replace("❓ PREDICTED INTERVIEW QUESTIONS:", "").replace("❓ Questions d'entretien prédites:", "")}</div>', unsafe_allow_html=True)
-                            else:
-                                # Fallback: show as normal text
-                                st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
+                        section = section.strip()
+                        if not section:
+                            continue
+                        if section.startswith("📌 KEYWORDS TO ADD") or section.startswith("📌 Mots‑clés à ajouter"):
+                            content = section.replace("📌 KEYWORDS TO ADD:", "").replace("📌 Mots‑clés à ajouter:", "").strip()
+                            st.markdown(f'<div class="card"><h3>{keywords_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        elif section.startswith("🛠️ MISSING SKILLS") or section.startswith("🛠️ Compétences manquantes"):
+                            content = section.replace("🛠️ MISSING SKILLS / IMPROVEMENTS:", "").replace("🛠️ Compétences manquantes / Améliorations:", "").strip()
+                            st.markdown(f'<div class="card"><h3>{skills_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        elif section.startswith("📄 FORMATTING") or section.startswith("📄 Suggestions de mise en forme"):
+                            content = section.replace("📄 FORMATTING SUGGESTIONS:", "").replace("📄 Suggestions de mise en forme:", "").strip()
+                            st.markdown(f'<div class="card"><h3>{format_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        elif section.startswith("❓ PREDICTED INTERVIEW") or section.startswith("❓ Questions d'entretien prédites"):
+                            content = section.replace("❓ PREDICTED INTERVIEW QUESTIONS:", "").replace("❓ Questions d'entretien prédites:", "").strip()
+                            st.markdown(f'<div class="card"><h3>{questions_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        else:
+                            # Any other content (should not happen, but just in case)
+                            st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
                     
                     st.info(disclaimer)
                     
