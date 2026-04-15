@@ -202,9 +202,9 @@ def main_app():
         # OpenAI API Key Input
         api_key = st.text_input("🔑 OpenAI API Key", type="password", help="Enter your OpenAI API key. Get one from https://platform.openai.com/api-keys")
         if api_key:
-            st.success("✅ API key loaded", icon="")
+            st.success("✅ API key loaded")
         else:
-            st.warning("⚠️ Please enter your OpenAI API key", icon="")
+            st.warning("⚠️ Please enter your OpenAI API key")
         
         st.markdown("---")
         
