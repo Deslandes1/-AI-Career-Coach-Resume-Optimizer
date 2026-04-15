@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Custom CSS for Readability & Color
+# Custom CSS for Readability & Color (applies to both login and main)
 # -----------------------------
 st.markdown("""
 <style>
@@ -100,6 +100,12 @@ st.markdown("""
     
     /* Globe symbol */
     .big-globe {
+        font-size: 5rem;
+        display: block;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    .medium-globe {
         font-size: 3rem;
         display: inline-block;
         margin-right: 10px;
@@ -117,134 +123,184 @@ st.markdown("""
         border-radius: 12px;
         font-weight: 500;
     }
+    
+    /* Login container */
+    .login-container {
+        max-width: 450px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Sidebar - Language & Company Info
+# Authentication
 # -----------------------------
-with st.sidebar:
-    st.markdown('<span class="big-globe">🌐</span> **GlobalInternet.py**', unsafe_allow_html=True)
-    st.markdown("---")
-    
-    # Language selection
-    lang = st.radio("🌐 Language / Langue", ["English", "Français"], index=0)
-    
-    st.markdown("---")
-    st.markdown("**Founder & CEO:**")
-    st.markdown("Gesner Deslandes")
-    st.markdown("📞 WhatsApp: (509) 4738-5663")
-    st.markdown("📧 deslandes78@gmail.com")
-    st.markdown("🌐 [Main Website](https://globalinternetsitepy-abh7v6tnmskxxnuplrdcgk.streamlit.app/)")
-    st.markdown("---")
-    st.markdown("### 💰 Price")
-    st.markdown("**$20 USD** per analysis (one‑time) or **$49/month** for unlimited analyses.")
-    st.markdown("---")
-    st.markdown("© 2025 GlobalInternet.py")
-    st.markdown("All Rights Reserved")
+def check_password():
+    """Returns True if user is logged in."""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    return st.session_state.authenticated
 
-# -----------------------------
-# Main Title
-# -----------------------------
-col_logo, col_title = st.columns([1, 5])
-with col_logo:
+def login():
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
     st.markdown('<span class="big-globe">🌐</span>', unsafe_allow_html=True)
-with col_title:
-    st.markdown("# AI Career Coach – Resume Optimizer")
-    st.markdown("**Get tailored resume improvements and interview questions** – powered by AI.")
-
-st.markdown("---")
-
-# -----------------------------
-# Language Texts
-# -----------------------------
-if lang == "English":
-    upload_label = "📄 Upload your CV (PDF, DOCX, or TXT)"
-    paste_label = "Or paste your CV text below"
-    jd_label = "📋 Job Description (paste or upload .txt)"
-    analyze_btn = "🔍 Analyze & Get Suggestions"
-    processing = "Processing your CV and job description..."
-    error_no_cv = "Please provide your CV (upload or paste)."
-    error_no_jd = "Please provide a job description."
-    error_api_key = "OpenAI API key not found. Please add it to your Streamlit secrets."
-    result_title = "🎯 AI Analysis Results"
-    keywords_section = "📌 Keywords to Add"
-    skills_section = "🛠️ Missing Skills / Improvements"
-    format_section = "📄 Formatting Suggestions"
-    questions_section = "❓ Predicted Interview Questions"
-    disclaimer = "⚠️ AI suggestions are for guidance only. Always review before using."
-else:
-    upload_label = "📄 Téléchargez votre CV (PDF, DOCX ou TXT)"
-    paste_label = "Ou collez le texte de votre CV ci-dessous"
-    jd_label = "📋 Description de poste (collez ou téléchargez .txt)"
-    analyze_btn = "🔍 Analyser et obtenir des suggestions"
-    processing = "Traitement de votre CV et de la description de poste..."
-    error_no_cv = "Veuillez fournir votre CV (téléchargement ou texte)."
-    error_no_jd = "Veuillez fournir une description de poste."
-    error_api_key = "Clé API OpenAI introuvable. Ajoutez‑la dans les secrets Streamlit."
-    result_title = "🎯 Résultats de l'analyse IA"
-    keywords_section = "📌 Mots‑clés à ajouter"
-    skills_section = "🛠️ Compétences manquantes / Améliorations"
-    format_section = "📄 Suggestions de mise en forme"
-    questions_section = "❓ Questions d'entretien prédites"
-    disclaimer = "⚠️ Les suggestions IA sont indicatives. Relisez toujours avant utilisation."
-
-# -----------------------------
-# CV Input
-# -----------------------------
-st.subheader("📄 Your CV")
-cv_file = st.file_uploader(upload_label, type=["pdf", "docx", "txt"])
-cv_text = ""
-if cv_file:
-    file_type = cv_file.type
-    try:
-        if cv_file.type == "application/pdf":
-            pdf_reader = PyPDF2.PdfReader(cv_file)
-            cv_text = " ".join([page.extract_text() or "" for page in pdf_reader.pages])
-        elif cv_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            doc = docx.Document(cv_file)
-            cv_text = " ".join([para.text for para in doc.paragraphs])
-        else:  # txt
-            cv_text = cv_file.read().decode("utf-8")
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-        cv_text = ""
-
-cv_paste = st.text_area(paste_label, height=150)
-if cv_paste:
-    cv_text = cv_paste
-
-# -----------------------------
-# Job Description Input
-# -----------------------------
-st.subheader("💼 Job Description")
-jd_text = ""
-jd_file = st.file_uploader(jd_label, type=["txt"])
-if jd_file:
-    jd_text = jd_file.read().decode("utf-8")
-jd_paste = st.text_area("", height=150, placeholder="Paste the job description here...")
-if jd_paste:
-    jd_text = jd_paste
-
-# -----------------------------
-# Analyze Button
-# -----------------------------
-if st.button(analyze_btn, use_container_width=True):
-    if not cv_text.strip():
-        st.error(error_no_cv)
-    elif not jd_text.strip():
-        st.error(error_no_jd)
-    else:
-        # Check for OpenAI API key
-        openai_api_key = st.secrets.get("OPENAI_API_KEY")
-        if not openai_api_key:
-            st.error(error_api_key)
+    st.markdown("<h1 style='text-align:center;'>AI Career Coach</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;'>by GlobalInternet.py</p>", unsafe_allow_html=True)
+    
+    password = st.text_input("Enter password to access", type="password", key="login_pass")
+    if st.button("Login", use_container_width=True):
+        if password == "20082010":
+            st.session_state.authenticated = True
+            st.rerun()
         else:
-            openai.api_key = openai_api_key
-            with st.spinner(processing):
-                try:
-                    # Construct prompt
-                    system_prompt = """You are an expert career coach and resume writer. Analyze the CV against the job description. 
+            st.error("Incorrect password. Access denied.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# -----------------------------
+# Main App (only shown after login)
+# -----------------------------
+def main_app():
+    # Sidebar - Language & Company Info + Logout
+    with st.sidebar:
+        st.markdown('<span class="medium-globe">🌐</span> **GlobalInternet.py**', unsafe_allow_html=True)
+        st.markdown("---")
+        
+        # Language selection (now with Spanish)
+        lang = st.radio("🌐 Language", ["English", "Español", "Français"], index=0)
+        
+        st.markdown("---")
+        st.markdown("**Founder & CEO:**")
+        st.markdown("Gesner Deslandes")
+        st.markdown("📞 WhatsApp: (509) 4738-5663")
+        st.markdown("📧 deslandes78@gmail.com")
+        st.markdown("🌐 [Main Website](https://globalinternetsitepy-abh7v6tnmskxxnuplrdcgk.streamlit.app/)")
+        st.markdown("---")
+        st.markdown("### 💰 Price")
+        st.markdown("**$20 USD** per analysis (one‑time) or **$49/month** for unlimited analyses.")
+        st.markdown("---")
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state.authenticated = False
+            st.rerun()
+        st.markdown("© 2025 GlobalInternet.py")
+        st.markdown("All Rights Reserved")
+
+    # Main Title with globe
+    col_logo, col_title = st.columns([1, 5])
+    with col_logo:
+        st.markdown('<span class="medium-globe">🌐</span>', unsafe_allow_html=True)
+    with col_title:
+        st.markdown("# AI Career Coach – Resume Optimizer")
+        st.markdown("**Get tailored resume improvements and interview questions** – powered by AI.")
+
+    st.markdown("---")
+
+    # -----------------------------
+    # Language Texts (English, Español, Français)
+    # -----------------------------
+    if lang == "English":
+        upload_label = "📄 Upload your CV (PDF, DOCX, or TXT)"
+        paste_label = "Or paste your CV text below"
+        jd_label = "📋 Job Description (paste or upload .txt)"
+        analyze_btn = "🔍 Analyze & Get Suggestions"
+        processing = "Processing your CV and job description..."
+        error_no_cv = "Please provide your CV (upload or paste)."
+        error_no_jd = "Please provide a job description."
+        error_api_key = "OpenAI API key not found. Please add it to your Streamlit secrets."
+        result_title = "🎯 AI Analysis Results"
+        keywords_section = "📌 Keywords to Add"
+        skills_section = "🛠️ Missing Skills / Improvements"
+        format_section = "📄 Formatting Suggestions"
+        questions_section = "❓ Predicted Interview Questions"
+        disclaimer = "⚠️ AI suggestions are for guidance only. Always review before using."
+    elif lang == "Español":
+        upload_label = "📄 Sube tu CV (PDF, DOCX o TXT)"
+        paste_label = "O pega el texto de tu CV abajo"
+        jd_label = "📋 Descripción del puesto (pega o sube .txt)"
+        analyze_btn = "🔍 Analizar y obtener sugerencias"
+        processing = "Procesando tu CV y la descripción del puesto..."
+        error_no_cv = "Por favor, proporciona tu CV (sube o pega)."
+        error_no_jd = "Por favor, proporciona una descripción del puesto."
+        error_api_key = "Clave API de OpenAI no encontrada. Agrégala a los secretos de Streamlit."
+        result_title = "🎯 Resultados del análisis IA"
+        keywords_section = "📌 Palabras clave para añadir"
+        skills_section = "🛠️ Habilidades faltantes / Mejoras"
+        format_section = "📄 Sugerencias de formato"
+        questions_section = "❓ Preguntas de entrevista previstas"
+        disclaimer = "⚠️ Las sugerencias de IA son orientativas. Siempre revísalas antes de usar."
+    else:  # Français
+        upload_label = "📄 Téléchargez votre CV (PDF, DOCX ou TXT)"
+        paste_label = "Ou collez le texte de votre CV ci-dessous"
+        jd_label = "📋 Description de poste (collez ou téléchargez .txt)"
+        analyze_btn = "🔍 Analyser et obtenir des suggestions"
+        processing = "Traitement de votre CV et de la description de poste..."
+        error_no_cv = "Veuillez fournir votre CV (téléchargement ou texte)."
+        error_no_jd = "Veuillez fournir une description de poste."
+        error_api_key = "Clé API OpenAI introuvable. Ajoutez‑la dans les secrets Streamlit."
+        result_title = "🎯 Résultats de l'analyse IA"
+        keywords_section = "📌 Mots‑clés à ajouter"
+        skills_section = "🛠️ Compétences manquantes / Améliorations"
+        format_section = "📄 Suggestions de mise en forme"
+        questions_section = "❓ Questions d'entretien prédites"
+        disclaimer = "⚠️ Les suggestions IA sont indicatives. Relisez toujours avant utilisation."
+
+    # -----------------------------
+    # CV Input
+    # -----------------------------
+    st.subheader("📄 Your CV")
+    cv_file = st.file_uploader(upload_label, type=["pdf", "docx", "txt"])
+    cv_text = ""
+    if cv_file:
+        try:
+            if cv_file.type == "application/pdf":
+                pdf_reader = PyPDF2.PdfReader(cv_file)
+                cv_text = " ".join([page.extract_text() or "" for page in pdf_reader.pages])
+            elif cv_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                doc = docx.Document(cv_file)
+                cv_text = " ".join([para.text for para in doc.paragraphs])
+            else:  # txt
+                cv_text = cv_file.read().decode("utf-8")
+        except Exception as e:
+            st.error(f"Error reading file: {e}")
+            cv_text = ""
+
+    cv_paste = st.text_area(paste_label, height=150)
+    if cv_paste:
+        cv_text = cv_paste
+
+    # -----------------------------
+    # Job Description Input
+    # -----------------------------
+    st.subheader("💼 Job Description")
+    jd_text = ""
+    jd_file = st.file_uploader(jd_label, type=["txt"])
+    if jd_file:
+        jd_text = jd_file.read().decode("utf-8")
+    jd_paste = st.text_area("", height=150, placeholder="Paste the job description here...")
+    if jd_paste:
+        jd_text = jd_paste
+
+    # -----------------------------
+    # Analyze Button
+    # -----------------------------
+    if st.button(analyze_btn, use_container_width=True):
+        if not cv_text.strip():
+            st.error(error_no_cv)
+        elif not jd_text.strip():
+            st.error(error_no_jd)
+        else:
+            openai_api_key = st.secrets.get("OPENAI_API_KEY")
+            if not openai_api_key:
+                st.error(error_api_key)
+            else:
+                openai.api_key = openai_api_key
+                with st.spinner(processing):
+                    try:
+                        system_prompt = """You are an expert career coach and resume writer. Analyze the CV against the job description. 
 Provide output in the following format:
 
 📌 KEYWORDS TO ADD:
@@ -260,52 +316,55 @@ Provide output in the following format:
 - (list 5 likely interview questions based on the job description and CV)
 
 Keep each section concise but actionable. Use bullet points."""
-                    
-                    user_prompt = f"JOB DESCRIPTION:\n{jd_text}\n\nCV:\n{cv_text}"
-                    
-                    response = openai.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        temperature=0.7,
-                        max_tokens=1000
-                    )
-                    
-                    result = response.choices[0].message.content
-                    
-                    # Display results in nice cards
-                    st.markdown(f"## {result_title}")
-                    
-                    # Split sections by double newlines and process each
-                    sections = result.split("\n\n")
-                    for section in sections:
-                        section = section.strip()
-                        if not section:
-                            continue
-                        if section.startswith("📌 KEYWORDS TO ADD") or section.startswith("📌 Mots‑clés à ajouter"):
-                            content = section.replace("📌 KEYWORDS TO ADD:", "").replace("📌 Mots‑clés à ajouter:", "").strip()
-                            st.markdown(f'<div class="card"><h3>{keywords_section}</h3>{content}</div>', unsafe_allow_html=True)
-                        elif section.startswith("🛠️ MISSING SKILLS") or section.startswith("🛠️ Compétences manquantes"):
-                            content = section.replace("🛠️ MISSING SKILLS / IMPROVEMENTS:", "").replace("🛠️ Compétences manquantes / Améliorations:", "").strip()
-                            st.markdown(f'<div class="card"><h3>{skills_section}</h3>{content}</div>', unsafe_allow_html=True)
-                        elif section.startswith("📄 FORMATTING") or section.startswith("📄 Suggestions de mise en forme"):
-                            content = section.replace("📄 FORMATTING SUGGESTIONS:", "").replace("📄 Suggestions de mise en forme:", "").strip()
-                            st.markdown(f'<div class="card"><h3>{format_section}</h3>{content}</div>', unsafe_allow_html=True)
-                        elif section.startswith("❓ PREDICTED INTERVIEW") or section.startswith("❓ Questions d'entretien prédites"):
-                            content = section.replace("❓ PREDICTED INTERVIEW QUESTIONS:", "").replace("❓ Questions d'entretien prédites:", "").strip()
-                            st.markdown(f'<div class="card"><h3>{questions_section}</h3>{content}</div>', unsafe_allow_html=True)
-                        else:
-                            # Any other content (should not happen, but just in case)
-                            st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
-                    
-                    st.info(disclaimer)
-                    
-                except Exception as e:
-                    st.error(f"AI analysis failed: {e}")
+                        
+                        user_prompt = f"JOB DESCRIPTION:\n{jd_text}\n\nCV:\n{cv_text}"
+                        
+                        response = openai.ChatCompletion.create(
+                            model="gpt-3.5-turbo",
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_prompt}
+                            ],
+                            temperature=0.7,
+                            max_tokens=1000
+                        )
+                        
+                        result = response.choices[0].message.content
+                        
+                        st.markdown(f"## {result_title}")
+                        
+                        sections = result.split("\n\n")
+                        for section in sections:
+                            section = section.strip()
+                            if not section:
+                                continue
+                            if section.startswith("📌 KEYWORDS TO ADD") or section.startswith("📌 Mots‑clés à ajouter") or section.startswith("📌 Palabras clave para añadir"):
+                                content = section.split(":", 1)[-1].strip()
+                                st.markdown(f'<div class="card"><h3>{keywords_section}</h3>{content}</div>', unsafe_allow_html=True)
+                            elif section.startswith("🛠️ MISSING SKILLS") or section.startswith("🛠️ Compétences manquantes") or section.startswith("🛠️ Habilidades faltantes"):
+                                content = section.split(":", 1)[-1].strip()
+                                st.markdown(f'<div class="card"><h3>{skills_section}</h3>{content}</div>', unsafe_allow_html=True)
+                            elif section.startswith("📄 FORMATTING") or section.startswith("📄 Suggestions de mise en forme") or section.startswith("📄 Sugerencias de formato"):
+                                content = section.split(":", 1)[-1].strip()
+                                st.markdown(f'<div class="card"><h3>{format_section}</h3>{content}</div>', unsafe_allow_html=True)
+                            elif section.startswith("❓ PREDICTED INTERVIEW") or section.startswith("❓ Questions d'entretien prédites") or section.startswith("❓ Preguntas de entrevista previstas"):
+                                content = section.split(":", 1)[-1].strip()
+                                st.markdown(f'<div class="card"><h3>{questions_section}</h3>{content}</div>', unsafe_allow_html=True)
+                            else:
+                                st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
+                        
+                        st.info(disclaimer)
+                        
+                    except Exception as e:
+                        st.error(f"AI analysis failed: {e}")
+
+    # Footer
+    st.markdown('<div class="footer">🌐 GlobalInternet.py – AI Career Coach. From Haiti to the world.</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# Footer
+# Run login or main app
 # -----------------------------
-st.markdown('<div class="footer">🌐 GlobalInternet.py – AI Career Coach. From Haiti to the world.</div>', unsafe_allow_html=True)
+if not check_password():
+    login()
+else:
+    main_app()
