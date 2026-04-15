@@ -1,9 +1,8 @@
 import streamlit as st
-import openai
 import PyPDF2
 import docx
+from openai import OpenAI
 import io
-import os
 
 # -----------------------------
 # Page Configuration
@@ -59,11 +58,6 @@ st.markdown("""
     .stButton button:hover {
         background: #2a5298;
         transform: scale(1.02);
-    }
-    
-    /* Logout button specifically (already covered above, but ensure) */
-    .stButton button:has(> :contains("Logout")) {
-        color: white !important;
     }
     
     /* Success/Warning/Info boxes */
@@ -200,9 +194,18 @@ def login():
 # Main App (only shown after login)
 # -----------------------------
 def main_app():
-    # Sidebar - Language & Company Info + Logout
+    # Sidebar - Language, API Key & Company Info + Logout
     with st.sidebar:
         st.markdown('<span class="medium-globe">🌐</span> **GlobalInternet.py**', unsafe_allow_html=True)
+        st.markdown("---")
+        
+        # OpenAI API Key Input
+        api_key = st.text_input("🔑 OpenAI API Key", type="password", help="Enter your OpenAI API key. Get one from https://platform.openai.com/api-keys")
+        if api_key:
+            st.success("✅ API key loaded", icon="")
+        else:
+            st.warning("⚠️ Please enter your OpenAI API key", icon="")
+        
         st.markdown("---")
         
         # Language selection (English, Español, Français)
@@ -251,7 +254,7 @@ def main_app():
         processing = "Processing your CV and job description..."
         error_no_cv = "Please provide your CV (upload or paste)."
         error_no_jd = "Please provide a job description."
-        error_api_key = "OpenAI API key not found. Please add it to your Streamlit secrets."
+        error_api_key = "OpenAI API key is required. Please enter your API key in the sidebar."
         result_title = "🎯 AI Analysis Results"
         keywords_section = "📌 Keywords to Add"
         skills_section = "🛠️ Missing Skills / Improvements"
@@ -267,7 +270,7 @@ def main_app():
         processing = "Procesando tu CV y la descripción del puesto..."
         error_no_cv = "Por favor, proporciona tu CV (sube o pega)."
         error_no_jd = "Por favor, proporciona una descripción del puesto."
-        error_api_key = "Clave API de OpenAI no encontrada. Agrégala a los secretos de Streamlit."
+        error_api_key = "Se requiere la clave API de OpenAI. Ingresa tu clave API en la barra lateral."
         result_title = "🎯 Resultados del análisis IA"
         keywords_section = "📌 Palabras clave para añadir"
         skills_section = "🛠️ Habilidades faltantes / Mejoras"
@@ -283,7 +286,7 @@ def main_app():
         processing = "Traitement de votre CV et de la description de poste..."
         error_no_cv = "Veuillez fournir votre CV (téléchargement ou texte)."
         error_no_jd = "Veuillez fournir une description de poste."
-        error_api_key = "Clé API OpenAI introuvable. Ajoutez‑la dans les secrets Streamlit."
+        error_api_key = "La clé API OpenAI est requise. Veuillez entrer votre clé API dans la barre latérale."
         result_title = "🎯 Résultats de l'analyse IA"
         keywords_section = "📌 Mots‑clés à ajouter"
         skills_section = "🛠️ Compétences manquantes / Améliorations"
@@ -336,15 +339,15 @@ def main_app():
             st.error(error_no_cv)
         elif not jd_text.strip():
             st.error(error_no_jd)
+        elif not api_key:
+            st.error(error_api_key)
         else:
-            openai_api_key = st.secrets.get("OPENAI_API_KEY")
-            if not openai_api_key:
-                st.error(error_api_key)
-            else:
-                openai.api_key = openai_api_key
+            try:
+                # Initialize the OpenAI client with the user's key
+                client = OpenAI(api_key=api_key)
                 with st.spinner(processing):
-                    try:
-                        system_prompt = """You are an expert career coach and resume writer. Analyze the CV against the job description. 
+                    # Construct the system and user prompts
+                    system_prompt = """You are an expert career coach and resume writer. Analyze the CV against the job description. 
 Provide output in the following format:
 
 📌 KEYWORDS TO ADD:
@@ -360,48 +363,50 @@ Provide output in the following format:
 - (list 5 likely interview questions based on the job description and CV)
 
 Keep each section concise but actionable. Use bullet points."""
-                        
-                        user_prompt = f"JOB DESCRIPTION:\n{jd_text}\n\nCV:\n{cv_text}"
-                        
-                        response = openai.ChatCompletion.create(
-                            model="gpt-3.5-turbo",
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": user_prompt}
-                            ],
-                            temperature=0.7,
-                            max_tokens=1000
-                        )
-                        
-                        result = response.choices[0].message.content
-                        
-                        st.markdown(f"## {result_title}")
-                        
-                        sections = result.split("\n\n")
-                        for section in sections:
-                            section = section.strip()
-                            if not section:
-                                continue
-                            if section.startswith("📌 KEYWORDS TO ADD") or section.startswith("📌 Mots‑clés à ajouter") or section.startswith("📌 Palabras clave para añadir"):
-                                content = section.split(":", 1)[-1].strip()
-                                st.markdown(f'<div class="card"><h3>{keywords_section}</h3>{content}</div>', unsafe_allow_html=True)
-                            elif section.startswith("🛠️ MISSING SKILLS") or section.startswith("🛠️ Compétences manquantes") or section.startswith("🛠️ Habilidades faltantes"):
-                                content = section.split(":", 1)[-1].strip()
-                                st.markdown(f'<div class="card"><h3>{skills_section}</h3>{content}</div>', unsafe_allow_html=True)
-                            elif section.startswith("📄 FORMATTING") or section.startswith("📄 Suggestions de mise en forme") or section.startswith("📄 Sugerencias de formato"):
-                                content = section.split(":", 1)[-1].strip()
-                                st.markdown(f'<div class="card"><h3>{format_section}</h3>{content}</div>', unsafe_allow_html=True)
-                            elif section.startswith("❓ PREDICTED INTERVIEW") or section.startswith("❓ Questions d'entretien prédites") or section.startswith("❓ Preguntas de entrevista previstas"):
-                                content = section.split(":", 1)[-1].strip()
-                                st.markdown(f'<div class="card"><h3>{questions_section}</h3>{content}</div>', unsafe_allow_html=True)
-                            else:
-                                st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
-                        
-                        st.info(disclaimer)
-                        st.caption(pricing_note)
-                        
-                    except Exception as e:
-                        st.error(f"AI analysis failed: {e}")
+                    
+                    user_prompt = f"JOB DESCRIPTION:\n{jd_text}\n\nCV:\n{cv_text}"
+                    
+                    # Make the API call using the new client-based approach
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.7,
+                        max_tokens=1000
+                    )
+                    
+                    result = response.choices[0].message.content
+                    
+                    # Display results in nice cards
+                    st.markdown(f"## {result_title}")
+                    
+                    sections = result.split("\n\n")
+                    for section in sections:
+                        section = section.strip()
+                        if not section:
+                            continue
+                        if section.startswith("📌 KEYWORDS TO ADD") or section.startswith("📌 Mots‑clés à ajouter") or section.startswith("📌 Palabras clave para añadir"):
+                            content = section.split(":", 1)[-1].strip()
+                            st.markdown(f'<div class="card"><h3>{keywords_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        elif section.startswith("🛠️ MISSING SKILLS") or section.startswith("🛠️ Compétences manquantes") or section.startswith("🛠️ Habilidades faltantes"):
+                            content = section.split(":", 1)[-1].strip()
+                            st.markdown(f'<div class="card"><h3>{skills_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        elif section.startswith("📄 FORMATTING") or section.startswith("📄 Suggestions de mise en forme") or section.startswith("📄 Sugerencias de formato"):
+                            content = section.split(":", 1)[-1].strip()
+                            st.markdown(f'<div class="card"><h3>{format_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        elif section.startswith("❓ PREDICTED INTERVIEW") or section.startswith("❓ Questions d'entretien prédites") or section.startswith("❓ Preguntas de entrevista previstas"):
+                            content = section.split(":", 1)[-1].strip()
+                            st.markdown(f'<div class="card"><h3>{questions_section}</h3>{content}</div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
+                    
+                    st.info(disclaimer)
+                    st.caption(pricing_note)
+                    
+            except Exception as e:
+                st.error(f"AI analysis failed: {e}. Please check your API key and try again.")
 
     # Footer
     st.markdown('<div class="footer">🌐 GlobalInternet.py – AI Career Coach. From Haiti to the world.</div>', unsafe_allow_html=True)
