@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Custom CSS for Readability & Color (applies to both login and main)
+# Custom CSS for Readability & Color
 # -----------------------------
 st.markdown("""
 <style>
@@ -134,6 +134,25 @@ st.markdown("""
         box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         text-align: center;
     }
+    
+    /* Pricing card */
+    .pricing-card {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        margin: 0.5rem 0;
+    }
+    .pricing-card h3 {
+        color: white !important;
+        margin: 0;
+    }
+    .pricing-card .price {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -170,7 +189,7 @@ def main_app():
         st.markdown('<span class="medium-globe">🌐</span> **GlobalInternet.py**', unsafe_allow_html=True)
         st.markdown("---")
         
-        # Language selection (now with Spanish)
+        # Language selection (English, Español, Français)
         lang = st.radio("🌐 Language", ["English", "Español", "Français"], index=0)
         
         st.markdown("---")
@@ -180,8 +199,14 @@ def main_app():
         st.markdown("📧 deslandes78@gmail.com")
         st.markdown("🌐 [Main Website](https://globalinternetsitepy-abh7v6tnmskxxnuplrdcgk.streamlit.app/)")
         st.markdown("---")
-        st.markdown("### 💰 Price")
-        st.markdown("**$20 USD** per analysis (one‑time) or **$49/month** for unlimited analyses.")
+        
+        # Updated Pricing Section
+        st.markdown("### 💰 Pricing Plans")
+        st.markdown('<div class="pricing-card"><h3>🎯 Single Analysis</h3><div class="price">$10 USD</div><p>One-time fee · One full resume analysis</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pricing-card" style="background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);"><h3>🚀 Monthly Subscription</h3><div class="price">$29 USD/month</div><p>Unlimited analyses · Cancel anytime</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pricing-card" style="background: linear-gradient(135deg, #0f2b4d 0%, #1a3a6e 100%);"><h3>💎 Full Software Package</h3><div class="price">$149 USD one‑time</div><p>Complete source code + lifetime updates + free support · Delivered by email</p></div>', unsafe_allow_html=True)
+        st.caption("💡 Compare: Rezi Lifetime $149 · Resumatic AI Lifetime $149 · ResuFit Pro $14.90/month")
+        
         st.markdown("---")
         if st.button("🚪 Logout", use_container_width=True):
             st.session_state.authenticated = False
@@ -217,6 +242,7 @@ def main_app():
         format_section = "📄 Formatting Suggestions"
         questions_section = "❓ Predicted Interview Questions"
         disclaimer = "⚠️ AI suggestions are for guidance only. Always review before using."
+        pricing_note = "💡 After analysis, contact us via WhatsApp or email to purchase credits, subscribe monthly, or buy the full software package."
     elif lang == "Español":
         upload_label = "📄 Sube tu CV (PDF, DOCX o TXT)"
         paste_label = "O pega el texto de tu CV abajo"
@@ -232,6 +258,7 @@ def main_app():
         format_section = "📄 Sugerencias de formato"
         questions_section = "❓ Preguntas de entrevista previstas"
         disclaimer = "⚠️ Las sugerencias de IA son orientativas. Siempre revísalas antes de usar."
+        pricing_note = "💡 Después del análisis, contáctanos vía WhatsApp o email para comprar créditos, suscribirte mensualmente o comprar el paquete completo."
     else:  # Français
         upload_label = "📄 Téléchargez votre CV (PDF, DOCX ou TXT)"
         paste_label = "Ou collez le texte de votre CV ci-dessous"
@@ -247,6 +274,7 @@ def main_app():
         format_section = "📄 Suggestions de mise en forme"
         questions_section = "❓ Questions d'entretien prédites"
         disclaimer = "⚠️ Les suggestions IA sont indicatives. Relisez toujours avant utilisation."
+        pricing_note = "💡 Après l'analyse, contactez-nous via WhatsApp ou email pour acheter des crédits, vous abonner mensuellement ou acheter le logiciel complet."
 
     # -----------------------------
     # CV Input
@@ -354,6 +382,7 @@ Keep each section concise but actionable. Use bullet points."""
                                 st.markdown(f'<div class="card">{section}</div>', unsafe_allow_html=True)
                         
                         st.info(disclaimer)
+                        st.caption(pricing_note)
                         
                     except Exception as e:
                         st.error(f"AI analysis failed: {e}")
