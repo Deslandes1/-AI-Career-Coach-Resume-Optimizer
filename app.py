@@ -46,10 +46,10 @@ st.markdown("""
         box-shadow: 0 12px 28px rgba(0,0,0,0.1);
     }
     
-    /* Buttons */
+    /* Buttons - make text white */
     .stButton button {
         background: #1e3c72;
-        color: white;
+        color: white !important;
         border-radius: 40px;
         padding: 0.5rem 2rem;
         font-weight: 600;
@@ -59,6 +59,11 @@ st.markdown("""
     .stButton button:hover {
         background: #2a5298;
         transform: scale(1.02);
+    }
+    
+    /* Logout button specifically (already covered above, but ensure) */
+    .stButton button:has(> :contains("Logout")) {
+        color: white !important;
     }
     
     /* Success/Warning/Info boxes */
@@ -152,6 +157,17 @@ st.markdown("""
         font-size: 2rem;
         font-weight: bold;
         margin: 0.5rem 0;
+        color: white !important;
+    }
+    /* Make pricing card description text white */
+    .pricing-card p {
+        color: white !important;
+        opacity: 0.9;
+    }
+    
+    /* Sidebar text overrides for white on dark cards */
+    [data-testid="stSidebar"] .pricing-card p {
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
